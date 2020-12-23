@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://Materials/prototype_light.tres" type="Material" id=1]
+[ext_resource path="res://Actors/Player.tscn" type="PackedScene" id=2]
+
+[node name="Spatial" type="Spatial"]
+
+[node name="Player" parent="." instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.20032, 0 )
+
+[node name="CSGCombiner" type="CSGCombiner" parent="."]
+material_override = ExtResource( 1 )
+use_in_baked_light = true
+snap = 0.015
+use_collision = true
+
+[node name="CSGBox" type="CSGBox" parent="CSGCombiner"]
+width = 60.0
+depth = 38.0
+material = ExtResource( 1 )
