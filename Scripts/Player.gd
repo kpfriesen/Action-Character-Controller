@@ -2,21 +2,25 @@ extends KinematicBody
 
 export var speed: float = 10
 export var jump_height: float = 6
-export var acceleration: float = 10
-export var mouse_sensitivity: float = .5
+export var acceleration: float = 5
+export var deceleration: float = 10
+export(Curve) var acceleration_curve
+export var mouse_sensitivity: float = .1
 
 
 var direction: Vector3
 var velocity: Vector3 = Vector3(0,0,0)
 var fall_speed: float = 0
 var snap: Vector3 = Vector3(0,0,0)
+var phys_location = Vector3()
 
-onready var head = $Head
+onready var body = $display
+onready var head = $display/Head
 
 func _ready():
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
-func movement():
+func movement_input():
 	if is_on_floor():
 		direction = Vector3()
 		if Input.is_action_pressed("move_forward"):
@@ -42,6 +46,17 @@ func fall(delta):
 		snap = Vector3(0,-1,0)
 	else:
 		fall_speed -= 9.8 * delta
+
+func movement(delta):
+	var speed_offset: float = velocity.length() / speed
+	var acceleration_offset: float = self.acceleration_curve.interpolate(speed_offset)
+	if is_on_floor():
+		if direction.length() == 1:
+			velocity = velocity.linear_interpolate((direction * speed), acceleration_offset * acceleration * delta)
+		else:
+			velocity = velocity.linear_interpolate((direction * speed), deceleration * delta)
+	velocity.y = fall_speed
+	velocity = move_and_slide_with_snap(velocity, snap, Vector3.UP, true)
 	
 func _input(event):
 		#handle escaping window with mouse
@@ -57,10 +72,25 @@ func _input(event):
 		head.rotation.x = clamp(head.rotation.x, deg2rad(-89), deg2rad(89))
 		
 func _physics_process(delta):
-	movement()
+	movement_input()
 	fall(delta)
 	jump()
-	velocity = velocity.linear_interpolate((direction * speed), acceleration * delta)
-	velocity.y = fall_speed
-	velocity = move_and_slide_with_snap(velocity, snap, Vector3.UP, true)
-	
+	movement(delta)
+	phys_location = translation
+
+func _process(delta):
+	var phys_frames = ProjectSettings.get_setting("physics/common/physics_fps")
+	var fps = Engine.get_frames_per_second()
+	var offset_amount = velocity * delta
+	var smooth_position = global_transform.origin + offset_amount
+
+	if fps > phys_frames:
+		body.set_as_toplevel(true)
+		body.global_transform.origin = body.global_transform.origin.linear_interpolate(smooth_position, Engine.get_physics_interpolation_fraction())
+		body.rotation = rotation
+		
+	else:
+		body.global_transform = global_transform
+		body.set_as_toplevel(false)
+
+
