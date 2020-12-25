@@ -12,7 +12,7 @@ var direction: Vector3
 var velocity: Vector3 = Vector3(0,0,0)
 var fall_speed: float = 0
 var snap: Vector3 = Vector3(0,0,0)
-var phys_location = Vector3()
+onready var phys_location = global_transform.origin
 
 onready var body = $display
 onready var head = $display/Head
@@ -36,13 +36,14 @@ func movement_input():
 
 func jump():
 	if Input.is_action_just_pressed("jump"):
+		snap = Vector3(0, 0, 0)
 		if is_on_floor():
 			fall_speed = jump_height
-			snap = Vector3(0, 0, 0)
+
 	
 func fall(delta):
 	if is_on_floor():
-		fall_speed = 0
+		fall_speed = velocity.y - 0.01
 		snap = Vector3(0,-1,0)
 	else:
 		fall_speed -= 9.8 * delta
@@ -55,8 +56,30 @@ func movement(delta):
 			velocity = velocity.linear_interpolate((direction * speed), acceleration_offset * acceleration * delta)
 		else:
 			velocity = velocity.linear_interpolate((direction * speed), deceleration * delta)
+
 	velocity.y = fall_speed
+
 	velocity = move_and_slide_with_snap(velocity, snap, Vector3.UP, true)
+	phys_location = global_transform.origin
+
+func frame_interpolation(delta):
+	var phys_frames = ProjectSettings.get_setting("physics/common/physics_fps")
+	var fps = Engine.get_frames_per_second()
+	var offset_amount = velocity * delta
+	var smooth_position = global_transform.origin + offset_amount
+
+	if fps > phys_frames:
+		body.set_as_toplevel(true)
+#predictive interpolation (more stutter less input lag)
+		#body.global_transform.origin = body.global_transform.origin.linear_interpolate(smooth_position, Engine.get_physics_interpolation_fraction())
+#lagging interpolation (more input lag less stutter)
+		body.global_transform.origin = body.global_transform.origin.linear_interpolate(phys_location, Engine.get_physics_interpolation_fraction())
+		body.global_transform.origin
+		body.rotation = rotation
+
+	else:
+		body.global_transform = global_transform
+		body.set_as_toplevel(false)
 	
 func _input(event):
 		#handle escaping window with mouse
@@ -79,18 +102,8 @@ func _physics_process(delta):
 	phys_location = translation
 
 func _process(delta):
-	var phys_frames = ProjectSettings.get_setting("physics/common/physics_fps")
-	var fps = Engine.get_frames_per_second()
-	var offset_amount = velocity * delta
-	var smooth_position = global_transform.origin + offset_amount
+	frame_interpolation(delta)
+	pass
 
-	if fps > phys_frames:
-		body.set_as_toplevel(true)
-		body.global_transform.origin = body.global_transform.origin.linear_interpolate(smooth_position, Engine.get_physics_interpolation_fraction())
-		body.rotation = rotation
-		
-	else:
-		body.global_transform = global_transform
-		body.set_as_toplevel(false)
 
 

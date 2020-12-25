@@ -53,4 +53,6 @@ crouch={
 
 [rendering]
 
+quality/filters/anisotropic_filter_level=8
+quality/filters/msaa=2
 environment/default_environment="res://default_env.tres"
