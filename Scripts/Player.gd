@@ -1,13 +1,20 @@
 extends KinematicBody
 
-export var speed: float = 10
+
+
+export var speed_constant: float = 10
+export var acceleration_constant: float = 5
+export var deceleration_constant: float = 10
+
 export var jump_height: float = 6
-export var acceleration: float = 5
-export var deceleration: float = 10
+export var gravity: float = 9.8
 export(Curve) var acceleration_curve
+export(Curve) var slide_curve
 export var mouse_sensitivity: float = .1
 
-
+onready var speed: float = speed_constant
+var acceleration: float = acceleration_constant
+var deceleration: float = deceleration_constant
 var direction: Vector3
 var velocity: Vector3 = Vector3(0,0,0)
 var fall_speed: float = 0
@@ -16,6 +23,7 @@ onready var phys_location = global_transform.origin
 
 onready var body = $display
 onready var head = $display/Head
+onready var collider = $CollisionShape
 
 func _ready():
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -33,6 +41,19 @@ func movement_input():
 			direction += transform.basis.x
 			
 		direction = direction.normalized()
+		
+func crouch():
+	if Input.is_action_just_pressed("crouch"):
+		speed = speed_constant / 2
+		acceleration = acceleration_constant / 2
+	if Input.is_action_pressed("crouch"):
+		var speed_offset: float = velocity.length() / speed
+		var deceleration_offset: float = self.slide_curve.interpolate(speed_offset)
+		deceleration = deceleration_constant * deceleration_offset
+	if Input.is_action_just_released("crouch"):
+		speed = speed_constant
+		acceleration = acceleration_constant
+		deceleration = deceleration_constant
 
 func jump():
 	if Input.is_action_just_pressed("jump"):
@@ -46,7 +67,7 @@ func fall(delta):
 		fall_speed = velocity.y - 0.01
 		snap = Vector3(0,-1,0)
 	else:
-		fall_speed -= 9.8 * delta
+		fall_speed -= gravity * delta
 
 func movement(delta):
 	var speed_offset: float = velocity.length() / speed
@@ -59,18 +80,19 @@ func movement(delta):
 
 	velocity.y = fall_speed
 
-	velocity = move_and_slide_with_snap(velocity, snap, Vector3.UP, true)
+	velocity = move_and_slide_with_snap(velocity, snap, Vector3.UP, true, 4, .8)
 	phys_location = global_transform.origin
 
 func frame_interpolation(delta):
 	var phys_frames = ProjectSettings.get_setting("physics/common/physics_fps")
 	var fps = Engine.get_frames_per_second()
 	var offset_amount = velocity * delta
-	var smooth_position = global_transform.origin + offset_amount
+
 
 	if fps > phys_frames:
 		body.set_as_toplevel(true)
 #predictive interpolation (more stutter less input lag)
+		#var smooth_position = global_transform.origin + offset_amount
 		#body.global_transform.origin = body.global_transform.origin.linear_interpolate(smooth_position, Engine.get_physics_interpolation_fraction())
 #lagging interpolation (more input lag less stutter)
 		body.global_transform.origin = body.global_transform.origin.linear_interpolate(phys_location, Engine.get_physics_interpolation_fraction())
@@ -96,6 +118,7 @@ func _input(event):
 		
 func _physics_process(delta):
 	movement_input()
+	crouch()
 	fall(delta)
 	jump()
 	movement(delta)

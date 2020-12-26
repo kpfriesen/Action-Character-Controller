@@ -1,11 +1,14 @@
-[gd_scene load_steps=7 format=2]
+[gd_scene load_steps=8 format=2]
 
 [ext_resource path="res://Materials/prototype_light.tres" type="Material" id=1]
 [ext_resource path="res://Actors/Player.tscn" type="PackedScene" id=2]
 [ext_resource path="res://Materials/prototype_dark.tres" type="Material" id=3]
 
 [sub_resource type="Curve" id=2]
-_data = [ Vector2( 0, 0.209091 ), 0.0, -0.0689393, 0, 0, Vector2( 0.60989, 0.572727 ), 1.89091, 1.89091, 0, 0, Vector2( 0.868132, 1 ), -0.275757, 0.0, 0, 0 ]
+_data = [ Vector2( 0, 0.209091 ), 0.0, -0.0689393, 0, 0, Vector2( 0.587912, 0.518182 ), 1.89091, 1.89091, 0, 0, Vector2( 0.879121, 1 ), -0.275757, 0.0, 0, 0 ]
+
+[sub_resource type="Curve" id=5]
+_data = [ Vector2( 0.291209, 0.318182 ), 0.0, 0.0, 0, 0, Vector2( 0.351648, 1 ), -0.275758, 0.0, 0, 0, Vector2( 1, 0.209091 ), 0.0, 0.0, 0, 0 ]
 
 [sub_resource type="ProceduralSky" id=3]
 
@@ -20,8 +23,9 @@ glow_bloom = 0.1
 [node name="Spatial" type="Spatial"]
 
 [node name="Player" parent="." instance=ExtResource( 2 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.20032, 0 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.20032, 0 )
 acceleration_curve = SubResource( 2 )
+slide_curve = SubResource( 5 )
 
 [node name="CSGCombiner" type="CSGCombiner" parent="."]
 use_in_baked_light = true
