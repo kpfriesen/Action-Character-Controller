@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://Scripts/Player.gd" type="Script" id=1]
 
@@ -7,6 +7,61 @@
 [sub_resource type="CapsuleShape" id=1]
 radius = 0.5
 height = 1.5
+
+[sub_resource type="Animation" id=4]
+resource_name = "Crouch"
+length = 0.2
+tracks/0/type = "value"
+tracks/0/path = NodePath("MeshInstance:mesh:mid_height")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 0.2 ),
+"transitions": PoolRealArray( 1, 1 ),
+"update": 0,
+"values": [ 1.5, 0.5 ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("../CollisionShape:shape:height")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PoolRealArray( 0, 0.2 ),
+"transitions": PoolRealArray( 1, 1 ),
+"update": 0,
+"values": [ 1.5, 0.5 ]
+}
+tracks/2/type = "value"
+tracks/2/path = NodePath("../CollisionShape:translation")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/keys = {
+"times": PoolRealArray( 0, 0.2 ),
+"transitions": PoolRealArray( 1, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0, 0 ), Vector3( 0, 0.5, 0 ) ]
+}
+tracks/3/type = "value"
+tracks/3/path = NodePath("MeshInstance:translation")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/keys = {
+"times": PoolRealArray( 0, 0.2 ),
+"transitions": PoolRealArray( 1, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0, 0 ), Vector3( 0, 0.5, 0 ) ]
+}
+
+[sub_resource type="Animation" id=5]
+resource_name = "Stand"
 
 [sub_resource type="CapsuleMesh" id=2]
 radius = 0.5
@@ -22,10 +77,15 @@ shape = SubResource( 1 )
 
 [node name="display" type="Spatial" parent="."]
 
+[node name="AnimationPlayer" type="AnimationPlayer" parent="display"]
+anims/Crouch = SubResource( 4 )
+anims/Stand = SubResource( 5 )
+
 [node name="Head" type="Spatial" parent="display"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0 )
 
 [node name="Camera" type="Camera" parent="display/Head"]
+fov = 90.0
 
 [node name="MeshInstance" type="MeshInstance" parent="display"]
 transform = Transform( 1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0 )

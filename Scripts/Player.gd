@@ -7,6 +7,7 @@ export var acceleration_constant: float = 5
 export var deceleration_constant: float = 10
 
 export var jump_height: float = 6
+export var jump_lateral_speed: float = 5
 export var gravity: float = 9.8
 export(Curve) var acceleration_curve
 export(Curve) var slide_curve
@@ -19,47 +20,97 @@ var direction: Vector3
 var velocity: Vector3 = Vector3(0,0,0)
 var fall_speed: float = 0
 var snap: Vector3 = Vector3(0,0,0)
+var slope_stop: bool = true
 onready var phys_location = global_transform.origin
 
 onready var body = $display
+onready var animation_player = $display/AnimationPlayer
 onready var head = $display/Head
-onready var collider = $CollisionShape
+onready var camera = $display/Head/Camera
 
 func _ready():
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 func movement_input():
-	if is_on_floor():
-		direction = Vector3()
-		if Input.is_action_pressed("move_forward"):
-			direction -= transform.basis.z
-		if Input.is_action_pressed("move_backward"):
-			direction += transform.basis.z
-		if Input.is_action_pressed("move_left"):
-			direction -= transform.basis.x
-		if Input.is_action_pressed("move_right"):
-			direction += transform.basis.x
-			
-		direction = direction.normalized()
+	direction = Vector3(0,0,0)
+	#if is_on_floor():
+	if Input.is_action_pressed("move_forward"):
+		direction -= transform.basis.z
+	if Input.is_action_pressed("move_backward"):
+		direction += transform.basis.z
+	if Input.is_action_pressed("move_left"):
+		direction -= transform.basis.x
+	if Input.is_action_pressed("move_right"):
+		direction += transform.basis.x
 		
+	direction = direction.normalized()
+
+#add some form of yield to crouch animation so player can't spam slide boost
 func crouch():
 	if Input.is_action_just_pressed("crouch"):
 		speed = speed_constant / 2
 		acceleration = acceleration_constant / 2
+		slope_stop = false
+		animation_player.play("Crouch")
+
+
 	if Input.is_action_pressed("crouch"):
 		var speed_offset: float = velocity.length() / speed
 		var deceleration_offset: float = self.slide_curve.interpolate(speed_offset)
 		deceleration = deceleration_constant * deceleration_offset
 	if Input.is_action_just_released("crouch"):
+		slope_stop = true
 		speed = speed_constant
 		acceleration = acceleration_constant
 		deceleration = deceleration_constant
+		animation_player.play_backwards("Crouch")
+
+func wall_angle():
+	if not is_on_floor():
+		var wall_collision = get_slide_collision(0)
+		return wall_collision.normal
+
+#do this if player inputs crouch at > x% speed
+func slide():
+	#animate fov narrowing
+	pass
+
+func vault():
+	pass
+
+#if collider_normal dot movement vector closer to 0
+func wall_run():
+	gravity = 9.8
+	if not is_on_floor():
+		if direction.length() > 0:
+			if is_on_wall():
+				print("is on wall")
+				var wall_angle = get_slide_collision(0).normal
+				print(wall_angle.dot(direction))
+				if wall_angle.dot(direction) > -0.5:
+					velocity += -wall_angle() * 0.1
+					fall_speed = 0
+					return true
+
+#do this if wall collider normal dot movement vector is closer to -1
+func wall_climb():
+	pass
+
+#if wall collider normal dot movement vector is closer to 1
+func wall_jump():
+	pass
+
+func wall_reverse():
+	if Input.is_action_just_pressed("player_ability_2"):
+		rotate(Vector3.UP, PI)
 
 func jump():
 	if Input.is_action_just_pressed("jump"):
 		snap = Vector3(0, 0, 0)
 		if is_on_floor():
 			fall_speed = jump_height
+			if velocity.length() < jump_lateral_speed and direction != Vector3(0,0,0):
+				velocity = direction * jump_lateral_speed
 
 	
 func fall(delta):
@@ -68,6 +119,7 @@ func fall(delta):
 		snap = Vector3(0,-1,0)
 	else:
 		fall_speed -= gravity * delta
+
 
 func movement(delta):
 	var speed_offset: float = velocity.length() / speed
@@ -80,25 +132,16 @@ func movement(delta):
 
 	velocity.y = fall_speed
 
-	velocity = move_and_slide_with_snap(velocity, snap, Vector3.UP, true, 4, .8)
+	velocity = move_and_slide_with_snap(velocity, snap, Vector3.UP, slope_stop, 4, 1)
 	phys_location = global_transform.origin
 
-func frame_interpolation(delta):
+func frame_interpolation():
 	var phys_frames = ProjectSettings.get_setting("physics/common/physics_fps")
 	var fps = Engine.get_frames_per_second()
-	var offset_amount = velocity * delta
-
-
 	if fps > phys_frames:
 		body.set_as_toplevel(true)
-#predictive interpolation (more stutter less input lag)
-		#var smooth_position = global_transform.origin + offset_amount
-		#body.global_transform.origin = body.global_transform.origin.linear_interpolate(smooth_position, Engine.get_physics_interpolation_fraction())
-#lagging interpolation (more input lag less stutter)
 		body.global_transform.origin = body.global_transform.origin.linear_interpolate(phys_location, Engine.get_physics_interpolation_fraction())
-		body.global_transform.origin
 		body.rotation = rotation
-
 	else:
 		body.global_transform = global_transform
 		body.set_as_toplevel(false)
@@ -121,11 +164,13 @@ func _physics_process(delta):
 	crouch()
 	fall(delta)
 	jump()
+	wall_run()
 	movement(delta)
+
 	phys_location = translation
 
 func _process(delta):
-	frame_interpolation(delta)
+	frame_interpolation()
 	pass
 
 
