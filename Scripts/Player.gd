@@ -38,6 +38,7 @@ onready var body = $display
 onready var animation_player = $display/AnimationPlayer
 onready var head = $display/Head
 onready var camera = $display/Head/Camera
+onready var ledge_raycast = $Colliders/LedgeRayCast
 
 #timer references
 onready var wallrun_timer = $Timers/WallRunTimer
@@ -91,6 +92,10 @@ func slide():
 	#animate fov narrowing
 	pass
 
+func wall_mount():
+	if not ledge_raycast.is_colliding():
+		pass
+	
 func vault():
 	pass
 
@@ -103,11 +108,12 @@ func wall_listener():
 				if is_on_wall():
 					var wall_angle = get_slide_collision(0).normal
 					if not wallrun and not climbing:
-						if wall_angle.dot(velocity) > -0.5 and velocity.length() > speed / 2 and climbing == false:
+						if wall_angle.dot(velocity) > -0.7 and velocity.length() > speed / 2 and climbing == false:
 							wallrun = true
 							wallrun_timer.start()
-						if wall_angle.dot(direction) < -0.7 and wallrun == false:
-							climbing = true
+						if velocity.y > 0:
+							if wall_angle.dot(direction) < -0.8 and wallrun == false:
+								climbing = true
 					wall_reverse()
 					wall_jump()
 			
@@ -139,6 +145,7 @@ func wall_jump():
 		fall_speed = velocity.y
 		print("jump")
 		wallrun = false
+		wallrun_timer.stop()
 		can_wall_move = true
 
 

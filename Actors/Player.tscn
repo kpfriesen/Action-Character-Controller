@@ -107,5 +107,11 @@ wait_time = 1.5
 one_shot = true
 
 [node name="WallClimbTimer" type="Timer" parent="Timers"]
+
+[node name="Colliders" type="Spatial" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0 )
+
+[node name="LedgeRayCast" type="RayCast" parent="Colliders"]
+enabled = true
 [connection signal="timeout" from="Timers/WallRunTimer" to="." method="_on_WallRunTimer_timeout"]
 [connection signal="timeout" from="Timers/WallClimbTimer" to="." method="_on_WallClimbTimer_timeout"]
