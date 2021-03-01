@@ -116,6 +116,7 @@ func wall_listener():
 								climbing = true
 					wall_reverse()
 					wall_jump()
+					print(rotation)
 			
 
 func wall_run():
@@ -137,6 +138,7 @@ func wall_climb():
 		else:
 			climbing = false
 
+#TODO only jump if facing away from wall
 #if wall collider normal dot movement vector is closer to 1
 func wall_jump():
 	if Input.is_action_just_pressed("jump"):
